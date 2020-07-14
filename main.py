@@ -1,5 +1,6 @@
 import socket
 import argparse
+import stdiocolours
 from enum import Enum
 from confluent_kafka import Producer
 
@@ -15,9 +16,9 @@ def main():
 
 def message_ack(err, msg):
     if err is not None:
-        print("Failed to deliver message: %s: %s" % (str(msg), str(err)))
+        print(stdiocolours.FAIL + "\nFailed to deliver message: %s: %s" % (str(msg), str(err)) + stdiocolours.ENDC, "\n")
     else:
-        print("Message produced: %s" % (str(msg)))
+        print(stdiocolours.OKGREEN + "\nMessage sent: %s" % (str(msg)) + stdiocolours.ENDC, "\n")
 
 class Operation(Enum):
     SEND_MESSAGE = 'send-message'
