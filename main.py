@@ -1,8 +1,14 @@
+import sys
 import socket
 import argparse
 import stdiocolours
 from enum import Enum
 from confluent_kafka import Producer
+from watchdog.observers import Observer
+from watchdog.events import LoggingEventHandler
+
+import time
+import logging
 
 def main():
     args = get_args()
@@ -20,6 +26,8 @@ def main():
         for topic in producer.list_topics().topics:
             print(str(count) + ":", topic)
             count += 1
+    if args.operation is Operation.WATCH_PRODUCE:
+        watch_dir()
 
 
 def message_ack(err, msg, topic):
@@ -30,14 +38,31 @@ def message_ack(err, msg, topic):
 
 class Operation(Enum):
     PRODUCE = 'produce'
+    WATCH_PRODUCE = 'watch-produce'
     CONSUME = 'consume'
     LIST_TOPICS = 'list-topics'
 
+
+def watch_dir():
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s - %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S')
+    event_handler = LoggingEventHandler()
+    observer = Observer()
+    observer.schedule(event_handler, '.', recursive=True)
+    observer.start()
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        observer.stop()
+    observer.join()
+
 def get_args():
     parser = argparse.ArgumentParser(description='A helper to send data to a Kafka cluster')
-    parser.add_argument('--operation', type=Operation, default='', required=True,
+    parser.add_argument('--operation', type=Operation, default='', required=False,
                         help='The operation to carry out')
-    parser.add_argument('--brokers', type=str, default='', required=True,
+    parser.add_argument('--brokers', type=str, default='', required=False,
                         help='A comma-separated list of broker addresses')
     parser.add_argument('--message', type=str, default='',
                         help='A single message to send to Kafka')
