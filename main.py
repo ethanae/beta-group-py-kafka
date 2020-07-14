@@ -6,22 +6,26 @@ from confluent_kafka import Producer
 
 def main():
     args = get_args()
+    print(args.topics.split(','))
+    # exit(0)
     producer = Producer({
         'bootstrap.servers': args.brokers,
         'client.id': socket.gethostname()
     })
-    if (args.operation is Operation.SEND_MESSAGE):
-        producer.produce(topic=args.topic, value=args.message, callback=message_ack)
-        producer.poll(1)
+    if (args.operation is Operation.PRODUCE):
+        for topic in args.topics.split(','):
+            producer.produce(topic=topic, value=args.message, callback=lambda err, msg: message_ack(err, msg, topic))
+            producer.poll(5)
 
-def message_ack(err, msg):
+def message_ack(err, msg, topic):
     if err is not None:
-        print(stdiocolours.FAIL + "\nFailed to deliver message: %s: %s" % (str(msg), str(err)) + stdiocolours.ENDC, "\n")
+        print(stdiocolours.FAIL + "\nTOPIC = %s \nFailed to deliver message: %s: %s" % (topic, str(msg), str(err)) + stdiocolours.ENDC, "\n")
     else:
-        print(stdiocolours.OKGREEN + "\nMessage sent: %s" % (str(msg)) + stdiocolours.ENDC, "\n")
+        print(stdiocolours.OKGREEN + "\nTOPIC = %s \nMessage sent: %s" % (topic, str(msg)) + stdiocolours.ENDC, "\n")
 
 class Operation(Enum):
-    SEND_MESSAGE = 'send-message'
+    PRODUCE = 'produce'
+    CONSUME = 'consume'
 
 def get_args():
     parser = argparse.ArgumentParser(description='A helper to send data to a Kafka cluster')
@@ -30,9 +34,9 @@ def get_args():
     parser.add_argument('--brokers', type=str, default='', required=True,
                         help='A comma-separated list of broker addresses')
     parser.add_argument('--message', type=str, default='',
-                        help='A JSON string of the message to send')
-    parser.add_argument('--topic', type=str, default='',
-                        help='The topic to which to send the message')
+                        help='A single message to send to Kafka')
+    parser.add_argument('--topics', type=str, default='',
+                        help='A comma-separated list of topics to produce or subscribe to')
     return parser.parse_args()    
 
 if __name__ == "__main__":
