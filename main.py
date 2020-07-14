@@ -10,10 +10,17 @@ def main():
         'bootstrap.servers': args.brokers,
         'client.id': socket.gethostname()
     })
-    if (args.operation is Operation.PRODUCE):
+    if args.operation is Operation.PRODUCE:
         for topic in args.topics.split(','):
             producer.produce(topic=topic.strip(), value=args.message, callback=lambda err, msg: message_ack(err, msg, topic))
             producer.poll(5)
+    if args.operation is Operation.LIST_TOPICS:
+        print(stdiocolours.OKBLUE + "\nTOPICS:" + stdiocolours.ENDC)
+        count = 1
+        for topic in producer.list_topics().topics:
+            print(str(count) + ":", topic)
+            count += 1
+
 
 def message_ack(err, msg, topic):
     if err is not None:
@@ -24,6 +31,7 @@ def message_ack(err, msg, topic):
 class Operation(Enum):
     PRODUCE = 'produce'
     CONSUME = 'consume'
+    LIST_TOPICS = 'list-topics'
 
 def get_args():
     parser = argparse.ArgumentParser(description='A helper to send data to a Kafka cluster')
