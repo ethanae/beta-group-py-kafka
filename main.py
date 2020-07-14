@@ -6,8 +6,6 @@ from confluent_kafka import Producer
 
 def main():
     args = get_args()
-    print(args.topics.split(','))
-    # exit(0)
     producer = Producer({
         'bootstrap.servers': args.brokers,
         'client.id': socket.gethostname()
