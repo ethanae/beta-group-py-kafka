@@ -12,7 +12,7 @@ def main():
     })
     if (args.operation is Operation.PRODUCE):
         for topic in args.topics.split(','):
-            producer.produce(topic=topic, value=args.message, callback=lambda err, msg: message_ack(err, msg, topic))
+            producer.produce(topic=topic.strip(), value=args.message, callback=lambda err, msg: message_ack(err, msg, topic))
             producer.poll(5)
 
 def message_ack(err, msg, topic):
